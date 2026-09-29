@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Achievement } from '../types.ts';
 import { useTheme, t } from '../utils/theme.tsx';
@@ -6,26 +6,60 @@ import { useTheme, t } from '../utils/theme.tsx';
 interface AchievementToastProps {
   achievement: Achievement | null;
   onDismiss: () => void;
+  duration?: number;
 }
 
-export const AchievementToast: React.FC<AchievementToastProps> = ({ achievement, onDismiss }) => {
+export const AchievementToast: React.FC<AchievementToastProps> = ({
+  achievement,
+  onDismiss,
+  duration = 3500,
+}) => {
   const { isDark } = useTheme();
   const c = t(isDark);
   const [visible, setVisible] = useState(false);
+  const activeIdRef = useRef<string | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
-    if (achievement) {
-      setVisible(true);
-      const timer = setTimeout(() => {
-        handleClose();
-      }, 2500); // 2.5 seconds auto-dismiss
-      return () => clearTimeout(timer);
+    if (!achievement) {
+      setVisible(false);
+      activeIdRef.current = null;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
     }
-  }, [achievement]);
 
-  const handleClose = () => {
+    // Only start a new countdown timer if a different achievement is received
+    if (activeIdRef.current !== achievement.id) {
+      activeIdRef.current = achievement.id;
+      setVisible(true);
+
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+
+      timerRef.current = setTimeout(() => {
+        setVisible(false);
+        setTimeout(() => {
+          onDismissRef.current();
+        }, 300);
+      }, duration);
+    }
+  }, [achievement?.id, duration]);
+
+  const handleManualClose = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     setVisible(false);
-    setTimeout(onDismiss, 250);
+    setTimeout(() => {
+      onDismissRef.current();
+    }, 300);
   };
 
   if (!achievement) return null;
@@ -46,6 +80,7 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({ achievement,
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? 'translateX(0) scale(1)' : 'translateX(28px) scale(0.95)',
+        pointerEvents: visible ? 'auto' : 'none',
         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
@@ -58,15 +93,15 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({ achievement,
         }}
       >
         <div className="flex items-start gap-3 pr-6">
-          <div 
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-lg flex-shrink-0 select-none"
             style={{ backgroundColor: tierColor + '15' }}
           >
             {achievement.icon}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: tierColor }}>
+              <span className="text-[9px] font-bold uppercase tracking-wider select-none" style={{ color: tierColor }}>
                 Badge Unlocked!
               </span>
             </div>
@@ -81,28 +116,30 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({ achievement,
 
         {/* Close button */}
         <button
-          onClick={handleClose}
-          className="absolute top-2.5 right-2.5 p-1 rounded-md transition-colors hover:bg-neutral-500/10"
+          type="button"
+          onClick={handleManualClose}
+          className="absolute top-2.5 right-2.5 p-1 rounded-md transition-colors hover:bg-neutral-500/10 cursor-pointer"
           style={{ color: c.textDim }}
           aria-label="Close notification"
         >
           <X className="w-3.5 h-3.5" />
         </button>
 
-        {/* 2.5s Progress bar animation */}
+        {/* Auto-dismiss progress bar */}
         <div className="mt-2.5 h-0.5 rounded-full overflow-hidden" style={{ backgroundColor: c.raised }}>
           <div
+            key={achievement.id}
             className="h-full rounded-full"
             style={{
               backgroundColor: tierColor,
-              animation: 'shrink 2.5s linear forwards',
+              animation: `toastShrink ${duration}ms linear forwards`,
               width: '100%',
             }}
           />
         </div>
       </div>
       <style>{`
-        @keyframes shrink { from { width: 100%; } to { width: 0%; } }
+        @keyframes toastShrink { from { width: 100%; } to { width: 0%; } }
       `}</style>
     </div>
   );

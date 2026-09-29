@@ -70,7 +70,10 @@ const AppDashboard: React.FC = () => {
     }
     return defaults;
   });
-  const [unlockedToast, setUnlockedToast] = useState<Achievement | null>(null);
+  const [toastQueue, setToastQueue] = useState<Achievement[]>([]);
+  const notifiedBadgesRef = useRef<Set<string>>(
+    new Set(achievementData.achievements.filter(a => !!a.unlockedAt).map(a => a.id))
+  );
   const achievementDataRef = useRef(achievementData);
   achievementDataRef.current = achievementData;
 
@@ -92,10 +95,15 @@ const AppDashboard: React.FC = () => {
       if (settingsData) setSettings(settingsData);
       if (achievementsData) {
         const synced = syncAchievementData(achievementsData);
+        synced.achievements.forEach((a) => {
+          if (a.unlockedAt) notifiedBadgesRef.current.add(a.id);
+        });
+        achievementDataRef.current = synced;
         setAchievementData(synced);
         window.electronAPI.saveAchievements(synced).catch(() => {});
       } else {
         const initial100 = createDefaultAchievementData();
+        achievementDataRef.current = initial100;
         window.electronAPI.saveAchievements(initial100).catch(() => {});
       }
     } catch (e) {
@@ -111,6 +119,7 @@ const AppDashboard: React.FC = () => {
       currentSessions
     );
 
+    achievementDataRef.current = updated;
     setAchievementData(updated);
     if (typeof window !== 'undefined') {
       try {
@@ -122,11 +131,13 @@ const AppDashboard: React.FC = () => {
       window.electronAPI.saveAchievements(updated).catch(() => {});
     }
 
-    // Trigger toast & notification for each newly unlocked achievement
-    if (newlyUnlocked.length > 0) {
-      const latest = newlyUnlocked[0];
-      setUnlockedToast(latest);
+    // Trigger toast & notification for each newly unlocked achievement not yet notified
+    const trulyNew = newlyUnlocked.filter((a) => !notifiedBadgesRef.current.has(a.id));
+    if (trulyNew.length > 0) {
+      trulyNew.forEach((a) => notifiedBadgesRef.current.add(a.id));
+      setToastQueue((prev) => [...prev, ...trulyNew]);
 
+      const latest = trulyNew[0];
       // Trigger desktop native notification
       if (window.electronAPI) {
         window.electronAPI.notifyAchievement(latest).catch(() => {});
@@ -363,7 +374,7 @@ const AppDashboard: React.FC = () => {
         <div className="flex items-center space-x-2">
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.accent }}></span>
           <span className="font-semibold text-xs tracking-tight" style={{ color: c.text }}>Attn</span>
-          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded" style={{ backgroundColor: c.raised, color: c.textMuted }}>v1.1</span>
+          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded" style={{ backgroundColor: c.raised, color: c.textMuted }}>v1.0.1</span>
         </div>
         <div className="flex items-center space-x-3 font-mono text-[10px]">
           <span>Poll: {settings.pollingIntervalMs}ms</span>
@@ -383,8 +394,10 @@ const AppDashboard: React.FC = () => {
 
       {/* Slide-in Achievement Toast */}
       <AchievementToast
-        achievement={unlockedToast}
-        onDismiss={() => setUnlockedToast(null)}
+        achievement={toastQueue.length > 0 ? toastQueue[0] : null}
+        onDismiss={() => {
+          setToastQueue((prev) => (prev.length > 0 ? prev.slice(1) : []));
+        }}
       />
 
       {/* Settings Modal */}
