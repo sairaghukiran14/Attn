@@ -1,0 +1,82 @@
+{
+  "name": "attn-attention-tracker",
+  "version": "1.0.0",
+  "description": "Desktop Attention Span & Context Switching Intelligence for macOS",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && electron electron/main.cjs",
+    "dev": "concurrently -k -r \"npm run dev:vite\" \"npm run dev:electron\"",
+    "build:react": "vite build",
+    "start": "electron electron/main.cjs",
+    "dist:dir": "npm run build:react && electron-builder --mac --arm64 --dir",
+    "install:app": "npm run dist:dir && rm -rf /Applications/Attn.app && cp -R release/mac-arm64/Attn.app /Applications/ && echo 'Installed to /Applications/Attn.app'",
+    "dist:mac": "npm run build:react && electron-builder --mac",
+    "dist:arm64": "npm run build:react && electron-builder --mac --arm64",
+    "dist:x64": "npm run build:react && electron-builder --mac --x64",
+    "dist:win": "npm run build:react && electron-builder --win",
+    "dist:all": "npm run build:react && electron-builder -mw"
+  },
+  "build": {
+    "appId": "so.attn.desktop",
+    "productName": "Attn",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "chart.js": "^4.5.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.48.0",
+    "react": "^19.3.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.3.0",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "wait-on": "^9.4.0"
+  }
+}

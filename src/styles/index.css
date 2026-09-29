@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ─── Global Smooth Theme & Element Transitions ──────────────── */
+.theme-smooth,
+.theme-smooth *,
+.theme-smooth *::before,
+.theme-smooth *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Exempt animations, transforms, and canvas from global color transitions to preserve 60fps */
+.theme-smooth canvas,
+.theme-smooth svg circle,
+.theme-smooth [class*="animate-"],
+.theme-smooth .no-theme-transition {
+  transition-property: none !important;
+}
+
+/* ─── Minimal Adaptive Scrollbars ────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.25);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.45);
+}
+
+/* ─── Modal Dialog Smooth Transitions ────────────────────────── */
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes modalContentPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop-anim {
+  animation: modalBackdropFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-content-anim {
+  animation: modalContentPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Tab Content Smooth Fade & Slide ────────────────────────── */
+@keyframes tabSlideFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-content-anim {
+  animation: tabSlideFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Card Smooth Micro-Interactions ─────────────────────────── */
+.smooth-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smooth-card:hover {
+  transform: translateY(-1.5px);
+}
+
+.interactive-button {
+  transition: transform 0.12s ease-out, background-color 0.18s ease, color 0.18s ease;
+}
+
+.interactive-button:active {
+  transform: scale(0.95);
+}
